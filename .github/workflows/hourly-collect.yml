@@ -1,0 +1,49 @@
+# Hourly collection, independent of any app being open.
+# Calls the protected admin endpoint (which also wakes a sleeping free-tier server), then waits for the run to finish.
+# Repository secrets required: MYNEWS_API_URL (e.g. https://mynews-api.onrender.com) and MYNEWS_ADMIN_TOKEN.
+name: Hourly news collection
+
+on:
+  schedule:
+    - cron: "5 * * * *" # every hour at :05 UTC (GitHub may delay scheduled runs by a few minutes)
+  workflow_dispatch: {}
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Wake the server
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 30 "$MYNEWS_API_URL/healthz"; then exit 0; fi
+            echo "waiting for server to start ($i)"; sleep 10
+          done
+          exit 1
+        env:
+          MYNEWS_API_URL: ${{ secrets.MYNEWS_API_URL }}
+
+      - name: Start collection
+        run: |
+          curl -fsS --max-time 60 -X POST \
+            -H "Authorization: Bearer $MYNEWS_ADMIN_TOKEN" \
+            "$MYNEWS_API_URL/admin/collect?trigger=schedule"
+        env:
+          MYNEWS_API_URL: ${{ secrets.MYNEWS_API_URL }}
+          MYNEWS_ADMIN_TOKEN: ${{ secrets.MYNEWS_ADMIN_TOKEN }}
+
+      - name: Wait for the run to finish and report it
+        run: |
+          for i in $(seq 1 60); do
+            sleep 15
+            status=$(curl -fsS --max-time 30 "$MYNEWS_API_URL/status")
+            outcome=$(echo "$status" | jq -r '.runs[0].outcome')
+            echo "latest run outcome: $outcome"
+            if [ "$outcome" != "running" ]; then
+              echo "$status" | jq '.runs[0]'
+              [ "$outcome" = "failed" ] && exit 1 || exit 0
+            fi
+          done
+          echo "run did not finish within 15 minutes"; exit 1
+        env:
+          MYNEWS_API_URL: ${{ secrets.MYNEWS_API_URL }}

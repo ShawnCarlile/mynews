@@ -1,0 +1,44 @@
+{
+  "_label": "FIXTURE DATASET - fictional demonstration articles for testing story grouping. Not real news. Publishers are 'Fixture Source A/B/C' and links point to example.com.",
+  "publishers": [
+    { "id": "fx_a", "name": "Fixture Source A", "feedUrl": "https://example.com/fixture-a.xml" },
+    { "id": "fx_b", "name": "Fixture Source B", "feedUrl": "https://example.com/fixture-b.xml" },
+    { "id": "fx_c", "name": "Fixture Source C", "feedUrl": "https://example.com/fixture-c.xml" }
+  ],
+  "expected_groups": [
+    ["g1a", "g1b", "g1c"],
+    ["g2a", "g2b", "g2c"],
+    ["g3a", "g3b"],
+    ["g4a", "g4b"],
+    ["g5a", "g5b", "g5c"]
+  ],
+  "expected_separate": [
+    { "reason": "Same person (Governor Maria Lopez), two unrelated events", "ids": ["s1a", "s1b"] },
+    { "reason": "Same topic (earthquake), two different events in different countries", "ids": ["s2a", "s2b"] }
+  ],
+  "articles": [
+    { "id": "g1a", "publisherId": "fx_a", "hoursAgo": 5, "title": "Wildfire forces evacuation of Pine Valley as winds spread flames", "excerpt": "Thousands of residents of Pine Valley, Colorado, were ordered to leave their homes on Tuesday as the Cedar Ridge Fire grew to 12,000 acres. Officials said shifting winds pushed the fire toward the town." },
+    { "id": "g1b", "publisherId": "fx_b", "hoursAgo": 4, "title": "Cedar Ridge Fire: Pine Valley residents flee as blaze doubles in size", "excerpt": "The Cedar Ridge Fire near Pine Valley, Colorado, doubled overnight. Firefighters said evacuation orders cover about 4,000 homes, and some residents criticised the late warning." },
+    { "id": "g1c", "publisherId": "fx_c", "hoursAgo": 3, "title": "Colorado governor declares emergency over Cedar Ridge Fire", "excerpt": "Colorado declared a state of emergency as the Cedar Ridge Fire threatened Pine Valley. State officials defended the timing of evacuation orders, while residents said alerts came too late." },
+
+    { "id": "g2a", "publisherId": "fx_a", "hoursAgo": 30, "title": "Federal Reserve holds interest rates steady, signals patience", "excerpt": "The Federal Reserve kept its benchmark interest rate unchanged on Wednesday. Chair Jordan Ellis said inflation was easing but the Fed would wait for more data before cutting rates." },
+    { "id": "g2b", "publisherId": "fx_b", "hoursAgo": 29, "title": "Fed leaves rates unchanged as Ellis warns cuts are not imminent", "excerpt": "Federal Reserve officials voted to hold interest rates. Jordan Ellis said cuts are not imminent. Business groups had urged a cut, while some economists backed the pause." },
+    { "id": "g2c", "publisherId": "fx_c", "hoursAgo": 28, "title": "Markets slip after Federal Reserve keeps interest rates on hold", "excerpt": "Stocks fell after the Federal Reserve held interest rates steady and Jordan Ellis said the central bank would be patient." },
+
+    { "id": "g3a", "publisherId": "fx_a", "hoursAgo": 50, "title": "Strong earthquake shakes Hokkaido, cutting power to thousands", "excerpt": "A magnitude 6.8 earthquake struck Hokkaido, Japan, early Thursday. The Japan Meteorological Agency issued a brief tsunami advisory and power was cut to 40,000 homes." },
+    { "id": "g3b", "publisherId": "fx_b", "hoursAgo": 49, "title": "Hokkaido earthquake: tsunami advisory lifted after 6.8 tremor", "excerpt": "The Japan Meteorological Agency lifted a tsunami advisory after a 6.8 magnitude earthquake hit Hokkaido. Officials reported minor injuries and widespread power cuts." },
+
+    { "id": "g4a", "publisherId": "fx_b", "hoursAgo": 70, "title": "Saginaw city council approves expanded bus service hours", "excerpt": "The Saginaw city council voted 6-3 to extend bus service hours into the evening. Supporters said riders need late transit to reach jobs, while critics questioned the cost." },
+    { "id": "g4b", "publisherId": "fx_c", "hoursAgo": 69, "title": "Saginaw buses will run later after council vote on transit plan", "excerpt": "Saginaw council members approved the transit plan to extend bus service hours. Two members who voted no said the city had not explained how it would pay for the expansion." },
+
+    { "id": "g5a", "publisherId": "fx_a", "hoursAgo": 90, "title": "Acme Health data breach exposes records of 2 million patients", "excerpt": "Acme Health said hackers accessed records of about 2 million patients, including names and insurance numbers. The company said no payment data was taken." },
+    { "id": "g5b", "publisherId": "fx_b", "hoursAgo": 89, "title": "Acme Health breach: patients urged to watch for fraud", "excerpt": "Patients affected by the Acme Health data breach were urged to monitor insurance statements. Privacy advocates said the company waited too long to disclose the breach." },
+    { "id": "g5c", "publisherId": "fx_c", "hoursAgo": 88, "title": "Regulators open inquiry into Acme Health data breach", "excerpt": "State regulators opened an inquiry into the Acme Health data breach affecting 2 million patients, asking when the company first learned of the hackers." },
+
+    { "id": "s1a", "publisherId": "fx_a", "hoursAgo": 20, "title": "Governor Maria Lopez signs state budget with school funding increase", "excerpt": "Governor Maria Lopez signed a $48 billion budget on Monday that raises school funding by 6 percent. Republicans said the plan spends too much." },
+    { "id": "s1b", "publisherId": "fx_b", "hoursAgo": 18, "title": "Governor Maria Lopez hospitalized after car crash on highway", "excerpt": "Governor Maria Lopez was taken to a hospital with minor injuries after her car was involved in a crash on Interstate 75, her office said." },
+
+    { "id": "s2a", "publisherId": "fx_a", "hoursAgo": 10, "title": "Earthquake strikes southern Chile, damaging buildings in Valdivia", "excerpt": "A magnitude 6.1 earthquake hit southern Chile, damaging older buildings in Valdivia. No deaths were reported." },
+    { "id": "s2b", "publisherId": "fx_c", "hoursAgo": 9, "title": "Earthquake in eastern Turkey kills at least 12 in Malatya province", "excerpt": "An earthquake struck eastern Turkey, killing at least 12 people in Malatya province and collapsing several homes, officials said." }
+  ]
+}
