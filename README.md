@@ -4,7 +4,7 @@ My News collects coverage from six news publishers every hour, groups articles a
 
 | | |
 |---|---|
-| **Deployed API** | `https://<your-service>.onrender.com` ← fill in after deploying (see [Deployment](#deployment)) |
+| **Deployed API** | https://mynews-api-l39l.onrender.com ([stories](https://mynews-api-l39l.onrender.com/stories) · [status](https://mynews-api-l39l.onrender.com/status)) |
 | **Client** | Flutter app in [`app/`](app/), release APK built with `flutter build apk --release` |
 | **Server** | Node.js 24 + Express 5 in [`server/`](server/) |
 | **Database** | Postgres (Supabase free tier); embedded PGlite for local development and tests |
@@ -241,7 +241,7 @@ cd app
 flutter pub get
 flutter test
 # Release APK against the deployed server:
-flutter build apk --release --dart-define=API_BASE_URL=https://<your-service>.onrender.com
+flutter build apk --release --dart-define=API_BASE_URL=https://mynews-api-l39l.onrender.com
 # Output: app/build/app/outputs/flutter-apk/app-release.apk
 # Install on a USB-connected phone (USB debugging enabled):
 flutter install --release
