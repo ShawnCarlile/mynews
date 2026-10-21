@@ -14,16 +14,16 @@ services:
         value: "24"
       - key: DATABASE_URL
         sync: false
-      - key: ANTHROPIC_API_KEY
+      - key: GEMINI_API_KEY
         sync: false
       - key: ADMIN_TOKEN
         sync: false
       - key: CONTACT_EMAIL
         sync: false
-      - key: ANTHROPIC_MODEL
-        value: claude-haiku-5-5
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
       - key: MAX_SUMMARIES_PER_RUN
-        value: "40"
+        value: "15"
 
   # Optional paid alternative to the GitHub Actions schedule ($1/month minimum on Render).
   # Uncomment to run the collector directly against the database every hour at :05.
@@ -36,5 +36,5 @@ services:
   #   startCommand: npm run collect -- --trigger=schedule
   #   envVars:
   #     - fromService: { type: web, name: mynews-api, envVarKey: DATABASE_URL }
-  #     - fromService: { type: web, name: mynews-api, envVarKey: ANTHROPIC_API_KEY }
+  #     - fromService: { type: web, name: mynews-api, envVarKey: GEMINI_API_KEY }
   #     - fromService: { type: web, name: mynews-api, envVarKey: CONTACT_EMAIL }

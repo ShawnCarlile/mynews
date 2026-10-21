@@ -7,7 +7,7 @@
 - [Any other tools you used: Copilot, ChatGPT, etc.]
 
 ## Two representative prompts
-1. [Your first prompt, e.g. pasting the assignment PDF and asking for the full MVP with a Node + Supabase backend and Claude summaries.]
+1. [Your first prompt, e.g. pasting the assignment PDF and asking for the full MVP with a Node + Supabase backend, first with Claude summaries and then switched to Google Gemini because it has a free tier.]
 2. [A follow-up prompt you wrote, e.g. asking it to tighten grouping after you saw a wrong merge, or to change the story ordering.]
 
 ## AI-generated mistakes found and corrected

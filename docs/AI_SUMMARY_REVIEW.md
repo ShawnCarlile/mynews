@@ -1,6 +1,6 @@
 # Manual review of three AI summaries
 
-**Status: TODO.** This must be completed with real summaries from the deployed server (the development machine had no Anthropic API key, so no real model output exists yet). The review has to be your own reading of the model output against its inputs.
+**Status: TODO.** This must be completed with real summaries from the deployed server (the development machine had no Gemini API key, so no real model output exists yet). The review has to be your own reading of the model output against its inputs.
 
 ## How to do it
 

@@ -13,11 +13,11 @@
     "collect": "node --env-file-if-exists=.env scripts/collect.js",
     "migrate": "node --env-file-if-exists=.env scripts/migrate.js",
     "load-fixtures": "node --env-file-if-exists=.env scripts/load-fixtures.js",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "AI_REQUEST_GAP_MS=1 node --test \"test/**/*.test.js\""
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.135.0",
     "@electric-sql/pglite": "^0.5.10",
+    "@google/genai": "^2.30.0",
     "express": "^5.3.0",
     "fast-xml-parser": "^5.11.2",
     "pg": "^8.23.1",

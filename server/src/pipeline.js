@@ -12,7 +12,7 @@ import { generateSummary, SummaryError } from "./ai/summarize.js";
 import { PROMPT_VERSION } from "./ai/prompts.js";
 
 const STALE_RUN_MINUTES = 30;
-const AI_CONCURRENCY = 4;
+const AI_CONCURRENCY = 1; // one request at a time to stay inside the Gemini free-tier rate limit
 
 export async function runCollection(db, options = {}) {
   const {
@@ -287,16 +287,21 @@ async function updateSummaries(db, generateSummaryImpl, now, stats) {
       stats.summariesGenerated += 1;
     } catch (error) {
       // Keep whatever valid content exists; record an honest error status.
-      if (error instanceof SummaryError && /not configured|rejected the server's API key/.test(error.message)) configError = error;
+      // A missing/rejected key or a rate limit will fail every remaining call too, so stop for this run.
+      if (error instanceof SummaryError && /not configured|rejected the request \(40[13]\)|rate limit/.test(error.message)) configError = error;
       await db.query("UPDATE summaries SET last_attempt_at = $2, last_error = $3 WHERE story_id = $1", [item.storyId, now, String(error.message).slice(0, 500)]);
       stats.summariesFailed += 1;
     }
   };
 
-  // A few requests in parallel keeps the hourly run short without bursting the AI rate limit.
   const queue = due.slice(0, env.maxSummariesPerRun);
   const workers = Array.from({ length: Math.min(AI_CONCURRENCY, queue.length) }, async () => {
-    while (queue.length) await generateOne(queue.shift());
+    while (queue.length) {
+      await generateOne(queue.shift());
+      if (queue.length && !configError) {
+        await new Promise((resolve) => setTimeout(resolve, env.aiRequestGapMs));
+      }
+    }
   });
   await Promise.all(workers);
 }

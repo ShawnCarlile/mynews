@@ -23,7 +23,9 @@ export const env = {
   pgliteDir: process.env.PGLITE_DIR || "./.data/pglite",
   adminToken: process.env.ADMIN_TOKEN || "",
   internalScheduler: process.env.ENABLE_INTERNAL_SCHEDULER === "true",
-  maxSummariesPerRun: Number(process.env.MAX_SUMMARIES_PER_RUN || 40),
+  maxSummariesPerRun: Number(process.env.MAX_SUMMARIES_PER_RUN || 15),
+  // Pause between AI requests so the Gemini free tier's per-minute limit is not exceeded.
+  aiRequestGapMs: Number(process.env.AI_REQUEST_GAP_MS || 6000),
   feedOverrides: process.env.FEED_URL_OVERRIDES || "" // JSON {publisherId: url}; used to simulate a broken feed
 };
 

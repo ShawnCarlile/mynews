@@ -186,7 +186,7 @@ test("provider failure: a failing feed or AI call keeps valid stored stories usa
   const db = await setup(t);
   await collect(db, T0, { summarizer: fakeSummarizer() });
 
-  const failingAi = { impl: async () => { throw new SummaryError("AI service error 529: overloaded"); } };
+  const failingAi = { impl: async () => { throw new SummaryError("AI service error 503: overloaded"); } };
   const changed = feedsAt(T0.getTime());
   changed.fox[0] = item("fox", "fire", changed.fox[0].title, "Updated: residents of Pine Valley fled the Cedar Ridge Fire.", changed.fox[0].publishedAt);
   const run = await collect(db, new Date(T0.getTime() + HOUR), { feeds: changed, failing: ["npr"], summarizer: failingAi });
@@ -202,12 +202,12 @@ test("provider failure: a failing feed or AI call keeps valid stored stories usa
   const fire = list.body.stories.find((s) => s.publisher_count === 3);
   const detail = await client.get(`/stories/${fire.id}`);
   assert.ok(detail.body.summary.overview, "previous summary built from still-valid articles is kept");
-  assert.equal(detail.body.summary.last_error, "AI service error 529: overloaded");
+  assert.equal(detail.body.summary.last_error, "AI service error 503: overloaded");
 });
 
 test("AI never configured: summary status is an honest failure, not fallback text", async (t) => {
   const db = await setup(t);
-  const noAi = { impl: async () => { throw new SummaryError("AI service not configured (ANTHROPIC_API_KEY missing on server)"); } };
+  const noAi = { impl: async () => { throw new SummaryError("AI service not configured (GEMINI_API_KEY missing on server)"); } };
   await collect(db, T0, { summarizer: noAi });
   const client = await api(t, db, T0);
   const id = (await client.get("/stories")).body.stories[0].id;

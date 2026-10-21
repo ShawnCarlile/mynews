@@ -8,7 +8,7 @@ My News collects coverage from six news publishers every hour, groups articles a
 | **Client** | Flutter app in [`app/`](app/), release APK built with `flutter build apk --release` |
 | **Server** | Node.js 24 + Express 5 in [`server/`](server/) |
 | **Database** | Postgres (Supabase free tier); embedded PGlite for local development and tests |
-| **AI** | Anthropic Claude (`claude-haiku-5-5`), called only by the server's hourly worker |
+| **AI** | Google Gemini (`gemini-3.8-flash`, free tier), called only by the server's hourly worker |
 | **Schedule** | GitHub Actions cron, hourly at :05 UTC ([workflow](.github/workflows/hourly-collect.yml)) |
 
 Other documents: [verification evidence](docs/VERIFICATION.md) · [AI summary review](docs/AI_SUMMARY_REVIEW.md) · [AI development reflection](docs/AI_REFLECTION.md) · [release notes and defect log](docs/RELEASE_NOTES.md) · [demo checklist](docs/DEMO_CHECKLIST.md). The original browser-only starter is kept for reference in [`starter/`](starter/).
@@ -36,7 +36,7 @@ flowchart LR
   API --> WK
   WK --> F & N & B & G & A & C
   WK --> W
-  WK -- "messages.parse<br/>(structured output)" --> AI[(Claude API)]
+  WK -- "generateContent<br/>(JSON schema output)" --> AI[(Gemini API)]
   WK <--> DB[(Supabase Postgres)]
   API -- "read only" --> DB
   P1[Phone 1: Flutter app] -- "GET /stories<br/>GET /stories/:id" --> API
@@ -113,7 +113,7 @@ Complete story detail. Returns `404` with a readable `message` if the story does
   "background": [{ "title": "Wikipedia: Alberta", "url": "https://en.wikipedia.org/wiki/…", "description": "…", "provider": "wikipedia", "matched_term": "…" }],
   "summary": {
     "status": "current", "message": null, "label": "AI-generated",
-    "version": 2, "generated_at": "…", "model": "claude-haiku-5-5", "prompt_version": "2026-10-19.1",
+    "version": 2, "generated_at": "…", "model": "gemini-3.8-flash", "prompt_version": "2026-10-19.1",
     "input_scope": "feed_excerpts", "input_scope_note": "Generated from RSS feed excerpts only, not full articles. …",
     "input_article_ids": ["a1b2…", "…"],
     "overview": "…", "agreement": "…", "disagreement": "…", "uncertainty": "…",
@@ -157,7 +157,7 @@ Each hourly run ([`server/src/pipeline.js`](server/src/pipeline.js)) does the fo
    - Between runs, the API also filters every query with `published_at >= now() - 168h`. Articles that cross the boundary disappear from responses immediately, and a summary that used them is reported as `outdated` with its text withheld.
 4. **Group** new articles into stories (below).
 5. **Background:** Wikipedia lookups for new or changed stories.
-6. **Summaries:** generate where the input hash changed (up to `MAX_SUMMARIES_PER_RUN`, multi-publisher stories first, 4 in parallel).
+6. **Summaries:** generate where the input hash changed (up to `MAX_SUMMARIES_PER_RUN`, multi-publisher stories first, one at a time).
 7. **Log** the run in `collection_runs`.
 
 **Missing or invalid publication dates.** Retention depends on publication time, so an item without a parseable date, or with a date more than 60 minutes in the future, is **skipped and never stored**. It is counted in `articles_skipped`. Items already older than 168 hours at fetch time are skipped the same way. All six current feeds supply valid dates; the skip count is visible in every run record.
@@ -211,12 +211,12 @@ Lookups are throttled (400 ms apart), stop early on HTTP 429, and run only for n
 ## AI summaries and perspectives
 
 - **Prompt and model configuration:** [`server/src/ai/prompts.js`](server/src/ai/prompts.js) (`PROMPT_VERSION`, `MODEL_CONFIG`, `SYSTEM_PROMPT`). The call is in [`server/src/ai/summarize.js`](server/src/ai/summarize.js).
-- **Model:** `claude-haiku-5-5`, `max_tokens` 16000, effort `medium`, using **structured output** (`messages.parse` with a Zod schema). Each response therefore has `overview`, `agreement`, `disagreement`, `uncertainty`, `overview_refs`, `perspectives_status`, and `perspectives[{label, summary, evidence_limits, supporting_article_refs}]`. Switch models with `ANTHROPIC_MODEL` (for example `claude-opus-5-5` for higher quality at about 40× the cost).
+- **Model:** Google `gemini-3.8-flash` through the `@google/genai` SDK (`models.generateContent`), temperature 0.2, up to 8,192 output tokens. The request sets `responseMimeType: "application/json"` and a `responseJsonSchema` generated from a Zod schema, and the server validates the reply against the same schema before storing it. Each stored result has `overview`, `agreement`, `disagreement`, `uncertainty`, `overview_refs`, `perspectives_status`, and `perspectives[{label, summary, evidence_limits, supporting_article_refs}]`. Change the model with `GEMINI_MODEL`. AI calls run one at a time, 6 seconds apart (`AI_REQUEST_GAP_MS`), to stay inside the free tier's per-minute limit.
 - **Grounding and traceability:** articles are sent as `<article id="A1" publisher=… published=…>` blocks with escaped content. The model cites ids; the server maps them back to article ids and **drops any reference that is not an input article**. Every perspective must cite at least one article. The app shows numbered supporting articles with Open buttons, an **AI-generated** label, the generation time, the model, and the input-scope disclosure ("feed excerpts only").
 - **No invented opposition:** the prompt forbids assigning viewpoints from a publisher's reputation and requires `insufficient_evidence` when fewer than two viewpoints are actually reported. The server enforces this too: fewer than two supported perspectives means status `insufficient_evidence`, and the app shows "Insufficient evidence for distinct perspectives."
 - **Prompt injection:** the system prompt states that article text is untrusted data, and the content is XML-escaped.
 - **Reuse:** a summary is stored with an `input_hash` = sha256(prompt version + sorted article id:content hash). It is regenerated only when that hash changes. Reads never call the model.
-- **Failures:** API errors, refusals (`stop_reason: "refusal"`), truncated output, and schema mismatches all produce `last_error` and an honest `failed` (or `stale`) status. No fallback text is ever presented as AI output. If the key is missing or rejected, the run stops trying after the first failure.
+- **Failures:** API errors, blocked prompts (`promptFeedback.blockReason`), truncated output (`MAX_TOKENS`), invalid JSON, and schema mismatches all produce `last_error` and an honest `failed` (or `stale`) status. No fallback text is ever presented as AI output. If the key is missing or rejected, or the free-tier rate limit is hit (HTTP 429), the run stops making AI calls; the remaining stories are summarized on the next hourly run.
 
 Manual review of three generated summaries: [docs/AI_SUMMARY_REVIEW.md](docs/AI_SUMMARY_REVIEW.md).
 
@@ -255,7 +255,7 @@ Optional: add `--dart-define=FEEDBACK_URL=<issues or form link>` to set the Abou
 ```bash
 cd server
 npm install
-cp .env.example .env        # add ANTHROPIC_API_KEY and CONTACT_EMAIL; leave DATABASE_URL empty for local PGlite
+cp .env.example .env        # add GEMINI_API_KEY and CONTACT_EMAIL; leave DATABASE_URL empty for local PGlite
 npm test                    # 12 tests: grouping fixtures + pipeline/API against in-memory Postgres
 npm run collect             # one real collection run against the live feeds
 npm start                   # API on http://localhost:8080
@@ -265,7 +265,7 @@ npm run load-fixtures       # optional: load the labeled fixture dataset (show i
 ## Deployment
 
 1. **Database (Supabase, free):** create a project, then copy *Project Settings → Database → Connection string → Session pooler* (IPv4). The schema is created automatically on first start.
-2. **API (Render, free):** push this repository to GitHub, then in Render choose *New → Blueprint* and select the repo (it reads [`render.yaml`](render.yaml)). Enter `DATABASE_URL`, `ANTHROPIC_API_KEY`, `ADMIN_TOKEN` (`openssl rand -hex 24`), and `CONTACT_EMAIL`. Check `https://<service>.onrender.com/healthz`.
+2. **API (Render, free):** push this repository to GitHub, then in Render choose *New → Blueprint* and select the repo (it reads [`render.yaml`](render.yaml)). Enter `DATABASE_URL`, `GEMINI_API_KEY` (free from aistudio.google.com/apikey), `ADMIN_TOKEN` (`openssl rand -hex 24`), and `CONTACT_EMAIL`. Check `https://<service>.onrender.com/healthz`.
 3. **Hourly schedule (GitHub Actions):** in the repo, open *Settings → Secrets and variables → Actions* and add `MYNEWS_API_URL` and `MYNEWS_ADMIN_TOKEN`. The workflow runs at :05 every hour. It wakes the server, starts a run, waits for it to finish, and fails visibly if the run fails. Trigger it manually with *Actions → Hourly news collection → Run workflow*.
    - Alternatives: the commented Render Cron Job in `render.yaml` (paid), or `ENABLE_INTERNAL_SCHEDULER=true` on an always-on host.
 4. **First data:** run the workflow once manually, then open `/status` and `/stories`.
@@ -278,7 +278,7 @@ npm run load-fixtures       # optional: load the labeled fixture dataset (show i
 | Hosting | Render web service (free) | 750 instance-hours/month; **sleeps after 15 min idle**, so the first request after idle can take ~30–60 s (the app waits up to 60 s and shows a hint). Render Starter ($7/month) removes sleep. |
 | Database | Supabase Postgres (free) | 500 MB; this app uses a few MB (about 1,000 articles in the window). Free projects pause after a week with no activity; the hourly job keeps it active. |
 | Scheduler | GitHub Actions | Free for public repos. Private repos: about 1–2 billed minutes per run × 720 runs/month, within the 2,000 free minutes. |
-| AI | Claude Haiku 5.5 ($0.10 / $0.50 per million input/output tokens) | About 1.5K input + 1–1.5K output tokens per summary, roughly **$0.001 per summary**. With 10–40 new or changed stories per hour, that's about **$0.25–1.00/day**, or **$8–30/month** worst case at the 40-per-run cap. Lower `MAX_SUMMARIES_PER_RUN` to cap spend. |
+| AI | Google Gemini API, free tier (`gemini-3.8-flash`) | **$0.** The free tier has per-minute and per-day request limits (shown in Google AI Studio). The server makes at most 15 calls per hourly run (`MAX_SUMMARIES_PER_RUN`), spaced 6 s apart, and only for stories whose articles changed. On the free tier, Google may use prompts and responses to improve its products; the inputs here are public news excerpts. |
 | Background | Wikipedia API | Free; throttled; needs a contact in the User-Agent. |
 | Feeds | Publishers' public RSS | Free; excerpts only. |
 

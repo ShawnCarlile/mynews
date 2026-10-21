@@ -2,10 +2,11 @@
 // a new version causes every story's summary to be regenerated on the next run.
 export const PROMPT_VERSION = "2026-10-19.1";
 
+// Gemini 3.8 Flash is on Google's free tier. Change it with GEMINI_MODEL if needed.
 export const MODEL_CONFIG = {
-  model: process.env.ANTHROPIC_MODEL || "claude-haiku-5-5",
-  max_tokens: 16000,
-  effort: process.env.ANTHROPIC_EFFORT || "medium"
+  model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+  temperature: 0.2, // low, so summaries stick closely to the excerpts
+  maxOutputTokens: 8192
 };
 
 export const SYSTEM_PROMPT = `You write neutral, grounded news briefings for the My News app.

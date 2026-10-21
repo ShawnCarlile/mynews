@@ -152,7 +152,7 @@ export function createApp(db, { now = () => new Date(), collect = runCollection 
         now: now().toISOString(),
         retention_hours: RETENTION_HOURS,
         schedule: "hourly (external scheduler calls POST /admin/collect; see README)",
-        ai: { configured: Boolean(process.env.ANTHROPIC_API_KEY), model: MODEL_CONFIG.model, effort: MODEL_CONFIG.effort, prompt_version: PROMPT_VERSION },
+        ai: { provider: "Google Gemini", configured: Boolean(process.env.GEMINI_API_KEY), model: MODEL_CONFIG.model, prompt_version: PROMPT_VERSION },
         totals,
         collection: await collectionInfo(db),
         runs: runs.map(formatRun)
